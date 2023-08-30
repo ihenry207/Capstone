@@ -1,4 +1,4 @@
-from machine import Pin, I2C
+from machine import Pin, I2C, SPI
 from ssd1306 import SSD1306_I2C
 import utime
 
@@ -9,6 +9,7 @@ HEIGHT = 64
 #max freq is 400K in fast mode
 i2c = I2C(0, scl = Pin(17), sda = Pin(16), freq = 200000)
 led = Pin('LED', Pin.OUT)
+
 
 oled = SSD1306_I2C(WIDTH, HEIGHT, i2c)
 t = 0
