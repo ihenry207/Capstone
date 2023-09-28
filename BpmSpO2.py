@@ -43,6 +43,8 @@ while True:
             print("Heart Rate:", heart_rate_bpm, "bpm")
     
     # Calculate SpO2 periodically
+    #SpO2 = (AC/DC) *K. K is the calibration factor
+    #I don't know what k is for now
     if len(spo2_buffer) == spo2_window_size:
         # Simple SpO2 estimation
         ac_sum = sum(spo2_buffer) - len(spo2_buffer) * sum(spo2_buffer) / len(spo2_buffer)
