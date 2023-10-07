@@ -24,7 +24,8 @@ led = Pin('LED', Pin.OUT)
 # Buffers and variable
 red_buffer = []
 ir_buffer = []
-WINDOW_SIZE = 2800 #needs to be big enough to accurately calculate heart rate
+WINDOW_SIZE = 1055#2800 #needs to be big enough to accurately calculate heart rate
+sample_rate = 211 #since I'm sampling at 210Hz
 
 
 #function for switching the LED
@@ -34,42 +35,42 @@ def LED_switch(Window_Size): #I might wanna assume the first few samples are scr
     #assume both LED are off
     IrLED.low()
     redLED.low()
-    i = 0
+    j = 0
     while j < WINDOW_SIZE: 
         redLED.high()
         IrLED.low()
-        time.sleep(0.01)#sleep
+        time.sleep(0.00263)# 0.01 sleep this is 100 hz. we have to increase it to 200hz
         #value = mcp3008.read(0)
         red_buffer.append(mcp3008.read(0))#append new sample read throught the spi adc
         redLED.low()
         IrLED.high()
-        time.sleep(0.01)#sleep
+        time.sleep(0.00263)#sleep
         ir_buffer.append(mcp3008.read(0))
         #increase i
         j += 1
+    #turn off the leds after
+    redLED.low()
+    IrLED.low()
 
 
 #function for detecting heart rate
-def detect_peak(heart_rate_buffer):
+def detect_peak(heart_rate_buffer, threshold=500):
     # Peak detection for heart rate
-        peaks = []
-        for i in range(1, len(heart_rate_buffer) - 1):
-            if heart_rate_buffer[i] > heart_rate_buffer[i - 1] and heart_rate_buffer[i] > heart_rate_buffer[i + 1]:
-                peaks.append(i)
+    peaks = []
+    for i in range(1, len(heart_rate_buffer) - 1):
+        if heart_rate_buffer[i] > threshold and heart_rate_buffer[i] > heart_rate_buffer[i - 1] and heart_rate_buffer[i] > heart_rate_buffer[i + 1]:
+            peaks.append(i)
+    print("number of peaks detected: ", peaks)
         
-        if len(peaks) >= 2:
+    if len(peaks) >= 2:
             # Compute intervals between all consecutive peaks
             #intervals helps to filter out the noise too
-            intervals = [peaks[i+1] - peaks[i] for i in range(len(peaks)-1)]
-        
-            # Calculate the average of these intervals
-            avg_interval = sum(intervals) / len(intervals)
-        
-            # Compute heart rate based on the average interval
-            heart_rate_bpm = int(60 / (avg_interval / sample_rate))
-            return heart_rate_bpm
-        else:
-            return None
+        intervals = [peaks[i+1] - peaks[i] for i in range(len(peaks)-1)]
+        avg_interval = sum(intervals) / len(intervals)
+        heart_rate_bpm = 60 / (avg_interval / sample_rate)
+        return heart_rate_bpm
+    else:
+        return None
 #here will go function for detecting SpO2 levels
 def detect_SpO2(red_buffer, ir_buffer):
     AC_red = max(red_buffer) - min(red_buffer)
@@ -91,7 +92,9 @@ def detect_SpO2(red_buffer, ir_buffer):
 
 #and then we go into the main while loop
 while True:
+    led.on()
     LED_switch(WINDOW_SIZE)#send in the window size
+    print("out of the sampling, now calculating heart rate")
     #after window size is done it will get out of the while loop
     #now we go to calculate the heart rate
     heart_rate = detect_peak(red_buffer)
