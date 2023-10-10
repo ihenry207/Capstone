@@ -4,6 +4,7 @@ from ssd1306 import SSD1306_I2C
 from mcp3008 import MCP3008
 import utime
 import time
+
 # Set up GPIO 14 and 15 as outputs for LED flashing
 redLED = machine.Pin(14, machine.Pin.OUT)
 IrLED = machine.Pin(15, machine.Pin.OUT)
@@ -12,99 +13,124 @@ spi = SPI(0, sck=Pin(2), mosi=Pin(3), miso=Pin(4), baudrate=100000)
 cs = Pin(22, Pin.OUT)#can be any GPIO pins on the board
 cs.value(1)  # disable chip at start
 mcp3008 = MCP3008(spi, cs)
-#end of spi connection
 
-#start of I2C configuration for the oled
-WIDTH = 128
-HEIGHT = 64
-i2c = I2C(0, scl = Pin(17), sda = Pin(16), freq = 200000)
-oled = SSD1306_I2C(WIDTH, HEIGHT, i2c)
 led = Pin('LED', Pin.OUT)
 
 # Buffers and variable
 red_buffer = []
-ir_buffer = []
-WINDOW_SIZE = 1055#2800 #needs to be big enough to accurately calculate heart rate
-sample_rate = 211 #since I'm sampling at 210Hz
+ir_buffer = [] #for blood oxygen levels
 
+WINDOW_SIZE = 2000 #needs to be big enough to accurately calculate heart rate
 
-#function for switching the LED
-def LED_switch(Window_Size): #I might wanna assume the first few samples are scratch and remove them
-    #here I want to gather flash the LED and get samples at the same time
-    #this is crucial in calculating the heart rate and blood oxygen levels
-    #assume both LED are off
+#function to pulse the leds
+def LED_switch(Window_Size):
     IrLED.low()
     redLED.low()
-    j = 0
-    while j < WINDOW_SIZE: 
+    print("pulsing the leds now")
+    
+    pulse_duration = 0.0025  # 2.5ms for 200Hz
+    for i in range(0, Window_Size-1):
         redLED.high()
         IrLED.low()
-        time.sleep(0.00263)# 0.01 sleep this is 100 hz. we have to increase it to 200hz
-        #value = mcp3008.read(0)
-        red_buffer.append(mcp3008.read(0))#append new sample read throught the spi adc
+        value = mcp3008.read(0)#trying to capture it's effect right after
+        red_buffer.append(value)
+        utime.sleep(pulse_duration)  # sleep for 2.5ms
+        
         redLED.low()
         IrLED.high()
-        time.sleep(0.00263)#sleep
-        ir_buffer.append(mcp3008.read(0))
-        #increase i
-        j += 1
-    #turn off the leds after
-    redLED.low()
-    IrLED.low()
-
-
-#function for detecting heart rate
-def detect_peak(heart_rate_buffer, threshold=500):
-    # Peak detection for heart rate
-    peaks = []
-    for i in range(1, len(heart_rate_buffer) - 1):
-        if heart_rate_buffer[i] > threshold and heart_rate_buffer[i] > heart_rate_buffer[i - 1] and heart_rate_buffer[i] > heart_rate_buffer[i + 1]:
-            peaks.append(i)
-    print("number of peaks detected: ", peaks)
-        
-    if len(peaks) >= 2:
-            # Compute intervals between all consecutive peaks
-            #intervals helps to filter out the noise too
-        intervals = [peaks[i+1] - peaks[i] for i in range(len(peaks)-1)]
-        avg_interval = sum(intervals) / len(intervals)
-        heart_rate_bpm = 60 / (avg_interval / sample_rate)
-        return heart_rate_bpm
-    else:
-        return None
-#here will go function for detecting SpO2 levels
-def detect_SpO2(red_buffer, ir_buffer):
-    AC_red = max(red_buffer) - min(red_buffer)
-    DC_red = sum(red_buffer) // len(red_buffer)
+        value2 = mcp3008.read(0)#trying to capture its effect right after
+        ir_buffer.append(value2)
+        utime.sleep(pulse_duration)  # sleep for 2.5ms
+    #I want to print the values inside red_buffer to check if I'm getting the right nbrs
+    #print("I'm going to now print the number in red_buffer")
+    #for x in red_buffer:
+        #print(x)
+#might introduce a phase lag
+def simple_moving_average(data, window_size): #lowpass filter
+    """Compute the simple moving average."""
+    #this code gives me memory allocation failure
+    #it's 2000 for this algorithm
+    return [sum(data[i:i+window_size]) / window_size for i in range(len(data) - window_size + 1)]
     
-    AC_ir = max(ir_buffer) - min(ir_buffer)
-    DC_ir = sum(ir_buffer) // len(ir_buffer)
+    
+    #so let's optimize it
+    #not sure if this works or not yet
+    #it's 2500 maximum for this algorithm
+    #result = []
+    #running_total = sum(data[:window_size])
+    #result.append(running_total / window_size)
+    
+    #for i in range(1, len(data) - window_size + 1):
+    #    running_total = running_total - data[i - 1] + data[i + window_size - 1]
+    #    result.append(running_total / window_size)
+    #return result
 
-    R_red = AC_red / DC_red
-    R_ir = AC_ir / DC_ir
+#peak detection algorithm
+#this peak detection algorithm is flawed.
+#I think we need to have a threshold and when a number crosses that threshold it is regarded as a peak
+def detect_peaks(data):
+    """Detect peaks in the data and return their indices."""
+    #we gonna use these indices to calculate the average distance between them
+    peak_indices = []
+    threshold = 2  # Adjust this threshold as needed
+    for j in range(1, len(data)-1):
+        if data[j] - data[j-1] > threshold and data[j] - data[j+1] > threshold:
+            peak_indices.append(j)  # Storing the index, not the value
+    return peak_indices
 
-    R = R_red / R_ir
+#from the peaks, calculate heart rate
+def compute_heart_rate(peak_indices, sampling_rate):
+    """Compute heart rate using the time between peaks."""
+    if len(peak_indices) <= 1:
+        print(len(peak_indices))
+        return "Cannot compute heart rate with less than two peaks"
+    # Calculate average distance between peaks
+    #average_distance = sum([peaks[i+1] - peaks[i] for i in range(len(peaks) - 1)]) / (len(peaks) - 1)
+    # Initialize a list to store distances between consecutive peaks
+    distances_between_peaks = []
 
-    # The empirical relation between SpO2 and R would go here. 
-    # For this example, I'm just returning R. In a real-world application, 
-    # you'd replace this with a calibration equation or lookup table.
-    #SpO2 = (10.0002*R^3 )-(52.887*R^2 )+(26.871*R)+98.283 #formula
-    return R
+    # Calculate distances between consecutive peaks
+    for i in range(len(peak_indices) - 1):
+        distance = peak_indices[i+1] - peak_indices[i]
+        distances_between_peaks.append(distance)
 
-#and then we go into the main while loop
+    # Calculate the sum of all distances
+    total_distance = sum(distances_between_peaks)
+
+    # Calculate the average distance between peaks
+    average_distance = total_distance / len(distances_between_peaks)
+    # Convert average distance into frequency (Hz)
+    frequency = sampling_rate / average_distance
+    
+    # Convert frequency to BPM
+    bpm = frequency * 60
+    return bpm
+
+def heart_rate_from_red_buffer(red_buffer, sampling_rate=200):
+    """Calculate heart rate from red_buffer data."""
+    # Smooth the data
+    smoothed_data = simple_moving_average(red_buffer, 20)#global variable
+    print("length of smoothed data: ", len(smoothed_data))#so the moving average function doesn't return anything
+    #print("I'm now printing smoothed data\n")
+    #for z in smoothed_data:
+        #print(smoothed_data)
+    # Detect peaks
+    peaks = detect_peaks(smoothed_data)
+    print("length of peaks:", len(peaks))
+    #for y in peaks:
+    #    print(y)
+    
+    # Compute heart rate
+    heart_rate = compute_heart_rate(peaks, sampling_rate)#sampling rate of 200Hz
+    
+    return heart_rate
+
 while True:
-    led.on()
+    #collect the data through pulsing of the led
     LED_switch(WINDOW_SIZE)#send in the window size
-    print("out of the sampling, now calculating heart rate")
-    #after window size is done it will get out of the while loop
-    #now we go to calculate the heart rate
-    heart_rate = detect_peak(red_buffer)
-    if heart_rate is not None:
-        print("Heart Rate: ", heart_rate)
-    else:
-        print("Heart Rate: Not detected")
-    #now we got to calculate the SpO2 levels
-    print("SpO2 Ratio:", detect_SpO2(red_buffer, ir_buffer))
-    
-    #now clear the buffers
+    heart_rate = heart_rate_from_red_buffer(red_buffer)
+    print("Heart Rate:", heart_rate, "BPM")
+    #free up the memory of buffers
     red_buffer = []
     ir_buffer = []
+    utime.sleep(0.2)#to allow the system to breathe a little
