@@ -29,15 +29,18 @@ def LED_switch(Window_Size):
     print("pulsing the leds now")
     
     pulse_duration = 0.0025  # 2.5ms for 200Hz
+    half_pulse_duration = pulse_duration / 2
     for i in range(0, Window_Size-1):
         redLED.high()
         IrLED.low()
+        utime.sleep(half_pulse_duration)#trying to get the high
         value = mcp3008.read(0)#trying to capture it's effect right after
         red_buffer.append(value)
         utime.sleep(pulse_duration)  # sleep for 2.5ms
         
         redLED.low()
         IrLED.high()
+        utime.sleep(half_pulse_duration)
         value2 = mcp3008.read(0)#trying to capture its effect right after
         ir_buffer.append(value2)
         utime.sleep(pulse_duration)  # sleep for 2.5ms
