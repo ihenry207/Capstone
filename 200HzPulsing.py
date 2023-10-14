@@ -40,7 +40,7 @@ def LED_switch(Window_Size):
         pin2.low()
         #led_toggle_time[i] = utime.ticks_diff(utime.ticks_us(), start_time)
         
-        utime.sleep_us(1500) #sleep for half a pulse
+        utime.sleep_us(500) #sleep for half a pulse
         #start_time = utime.ticks_us()
         #value = mcp3008.read(0)
         #read_time[i] = utime.ticks_diff(utime.ticks_us(), start_time)
@@ -48,14 +48,14 @@ def LED_switch(Window_Size):
         #start_time = utime.ticks_us()
         red_buffer[i] = mcp3008.read(0)
         #append_time_red[i] = utime.ticks_diff(utime.ticks_us(), start_time)
-        utime.sleep_us(3116)
+        utime.sleep_us(1631)
     
         #start_time = utime.ticks_us()
         pin1.low()
         pin2.high()
         #led_toggle_time_2[i] = utime.ticks_diff(utime.ticks_us(), start_time)
         
-        utime.sleep_us(1500) #sleep for half a pulse
+        utime.sleep_us(500) #sleep for half a pulse
         #start_time = utime.ticks_us()
         #value2 = mcp3008.read(0)
         #read_time_2[i] = utime.ticks_diff(utime.ticks_us(), start_time)
@@ -63,7 +63,7 @@ def LED_switch(Window_Size):
         #start_time = utime.ticks_us()
         ir_buffer[i] = mcp3008.read(0)
         #append_time_ir[i] = utime.ticks_diff(utime.ticks_us(), start_time)
-        utime.sleep_us(3116)
+        utime.sleep_us(1631)
     
         i += 1
 while True:
