@@ -1,4 +1,4 @@
-"""this code is able to pulse LED using a single core at either 188 or 210Hz but not 200Hz as expected"""
+"""this code is able to pulse LED using a single core at 200.5Hz as expected"""
 
 import machine
 import time
