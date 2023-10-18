@@ -109,7 +109,7 @@ def compute_heart_rate(peak_indices, sampling_rate):
     bpm = frequency * 60
     return bpm
 
-def heart_rate_from_red_buffer(red_buffer, sampling_rate=200):
+def heart_rate_from_red_buffer(red_buffer, sampling_rate=418):
     """Calculate heart rate from red_buffer data."""
     # Smooth the data
     smoothed_data = simple_moving_average(red_buffer, 20)#global variable
