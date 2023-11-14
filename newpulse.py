@@ -102,48 +102,7 @@ def find_heart_rate(values):
     # Print the heart rates in the desired format
     print(f"Heart rates are {heart_rates_str}")
     return average_heart_rate
-# Function to extract AC and DC components from the signals
-def extract_ac_dc_components(signal):
-    """
-    Extracts the AC and DC components from the given PPG signal.
-    The DC component is the average of the signal, and the AC component is the peak-to-peak amplitude.
-    """
-    dc_component = sum(signal) / len(signal)
-    ac_component = max(signal) - min(signal)
-    return ac_component, dc_component
 
-# Function to calculate ROR (Ratio of Ratios)
-def calculate_ror(red_ac, red_dc, ir_ac, ir_dc):
-    """
-    Calculates the Ratio of Ratios (ROR) for the given AC and DC components of red and infrared signals.
-    """
-    ror = (red_ac / red_dc) / (ir_ac / ir_dc)
-    return ror
-
-# Function to estimate SpO2
-def estimate_spo2(ror):
-    """
-    Estimates the SpO2 based on the Ratio of Ratios (ROR) and empirical coefficients.
-    Default values for A and B are chosen and does not reflect actual calibration values.
-    """
-    B = 1.5
-    A = 98 + B * ror
-    spo2 = A - B * ror
-    return spo2
-
-
-def find_spo2(red_values, ir_values):
-    # Extract AC and DC components for both red and infrared signals
-    red_ac, red_dc = extract_ac_dc_components(red_values)
-    ir_ac, ir_dc = extract_ac_dc_components(ir_values)
-    
-    # Calculate the ROR
-    ror = calculate_ror(red_ac, red_dc, ir_ac, ir_dc)
-
-    # Estimate SpO2
-    estimated_spo2 = estimate_spo2(ror)
-    
-    return estimated_spo2
 
 def new_spo2(red_values, ir_values):
     R1 = (max(red_values) - min(red_values)) * (min(ir_values))
