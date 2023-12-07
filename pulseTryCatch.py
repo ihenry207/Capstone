@@ -54,6 +54,59 @@ def LED_switch(Window_Size):
     print(valid_red_buffer)
     return valid_red_buffer, valid_ir_buffer
 
+def custom_min(values):
+    try:
+        if not values:
+            raise ValueError("Empty list provided for min calculation.")
+        min_value = values[0]
+        for value in values:
+            if value < min_value:
+                min_value = value
+        return min_value
+    except TypeError:
+        print("TypeError encountered in custom_min: Non-comparable elements.")
+        return None
+    except ValueError as e:
+        print(f"ValueError in custom_min: {e}")
+        return None
+    
+def custom_max(values):
+    try:
+        if not values:
+            raise ValueError("Empty list provided for max calculation.")
+        max_value = values[0]
+        for value in values:
+            if value > max_value:
+                max_value = value
+        return max_value
+    except TypeError:
+        print("TypeError encountered in custom_max: Non-comparable elements.")
+        return None
+    except ValueError as e:
+        print(f"ValueError in custom_max: {e}")
+        return None
+
+def custom_sum(numbers):
+    try:
+        total = 0
+        for number in numbers:
+            total += number
+        return total
+    except TypeError:
+        print("TypeError: Non-numeric value encountered in custom_sum.")
+        return None
+
+def custom_len(items):
+    try:
+        count = 0
+        for _ in items:
+            count += 1
+        return count
+    except TypeError:
+        print("TypeError: Provided argument is not iterable in custom_len.")
+        return None
+
+
 # Let's redefine the peak detection with the new threshold and minimum distance parameters
 def find_peaks(values, threshold, min_distance):
     peaks = []
@@ -73,7 +126,7 @@ def find_peaks(values, threshold, min_distance):
         i += 1  # Manually increment the counter
 
     # Check if the last peak is a valid peak and hasn't been added yet
-    if peak and len(values) - peak[0] >= min_distance:
+    if peak and custom_len(values) - peak[0] >= min_distance:
         peaks.append(peak)
 
     return peaks
@@ -87,7 +140,7 @@ def find_heart_rate(values):
     peaks = find_peaks(values, threshold, min_distance)
     # Calculate the heart rates from the peaks
     heart_rates = []
-    for i in range(1, len(peaks)):
+    for i in range(1, custom_len(peaks)):
         try:
             # Calculate the time difference between peaks in seconds
             time_diff = (peaks[i][0] - peaks[i-1][0]) / 100.0  # Convert from samples to seconds
@@ -99,17 +152,14 @@ def find_heart_rate(values):
             print("Warning: Division by zero encountered in heart rate calculation.")
             continue #continue. this is a more forgiving approach
         
-        
-    
-    if not heart_rates:
-        print("Error: No valid heart rates found.")
-        return None
-
     # Safely calculate the average heart rate
     try:
-        average_heart_rate = sum(heart_rates) / len(heart_rates)
+        average_heart_rate = custom_sum(heart_rates) / custom_len(heart_rates)
     except ZeroDivisionError:
         print("Error: Division by zero when calculating average heart rate.")
+        return None
+    except ValueError as e:
+        print(f"ValueError in find_heart_rate(): {e}")
         return None
     
     # Create a string from the heart_rates list in the desired format
@@ -121,12 +171,22 @@ def find_heart_rate(values):
 
 def new_spo2(red_values, ir_values):
     try:
-        R1 = (max(red_values) - min(red_values)) * (min(ir_values))
-        R2 = (max(ir_values) - min(ir_values)) * (min(red_values))
-         # Handle division by zero
+        max_red = custom_max(red_values)
+        min_red = custom_min(red_values)
+        max_ir = custom_max(ir_values)
+        min_ir = custom_min(ir_values)
+
+        if max_red is None or min_red is None or max_ir is None or min_ir is None:
+            raise ValueError("Invalid values for SpO2 calculation.")
+
+        R1 = (max_red - min_red) * min_ir
+        R2 = (max_ir - min_ir) * min_red
         R = R1 / R2
     except ZeroDivisionError:
         print("Error: Division by zero encountered. Cannot calculate SpO2.")
+        return None
+    except ValueError as e:
+        print(f"ValueError in new_spo2: {e}")
         return None
 
     sqR = R**2
@@ -140,8 +200,23 @@ while True:
     spo2 = new_spo2(red_values, ir_values)
     #spo2 = find_spo2(red_values, ir_values)
     bpm = find_heart_rate(red_values)
-    print("Estimated Heart Rate: {:.2f} BPM".format(bpm))
-    print("Estimated SpO2 Level: {:.2f}% ".format(spo2))
+    
+    if bpm is None:
+        print("An error occurred in Heart rate calculation.")
+        continue
+    else:
+        print("bpm calculation successful.")
+        print("Estimated SpO2 Level: {:.2f} ".format(bpm))
+        
+    print("\n")
+    
+    if spo2 is None:
+        print("An error occurred in spo2 calculation.")
+        continue
+    else:
+        print("spo2 calculation successful.")
+        print("Estimated SpO2 Level: {:.2f}% ".format(spo2))
+    
     #find_spo2(red _values, red_peaks, ir_values, ir_peaks)
     # Display the heart rate on the OLED
     #oled.fill(0)  # Clear the display
