@@ -14,7 +14,7 @@ try:
         # Toggle the states of the pins
         pin14.toggle()
         pin15.toggle()
-        time.sleep(0.01)  # 10ms delay for 50Hz frequency
+        time.sleep(0.001)  # 10ms delay for 50Hz frequency
 
 except KeyboardInterrupt:
     # Reset the pins to low before exiting

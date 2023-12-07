@@ -88,16 +88,30 @@ def find_heart_rate(values):
     # Calculate the heart rates from the peaks
     heart_rates = []
     for i in range(1, len(peaks)):
-        # Calculate the time difference between peaks in seconds
-        time_diff = (peaks[i][0] - peaks[i-1][0]) / 100.0  # Convert from samples to seconds
-        # Calculate the heart rate from the time difference
-        heart_rate = 60.0 / time_diff
-        heart_rates.append(heart_rate)
-    if len(heart_rates) == 0:
-        print("Zero Division Error, no heart rates found")
+        try:
+            # Calculate the time difference between peaks in seconds
+            time_diff = (peaks[i][0] - peaks[i-1][0]) / 100.0  # Convert from samples to seconds
+            # Calculate the heart rate from the time difference
+            heart_rate = 60.0 / time_diff
+            heart_rates.append(heart_rate)
+        except ZeroDivisionError:
+            # Handle the case where time_diff is zero, which causes division by zero
+            print("Warning: Division by zero encountered in heart rate calculation.")
+            continue #continue. this is a more forgiving approach
+        
+        
+    
+    if not heart_rates:
+        print("Error: No valid heart rates found.")
         return None
-    # Calculate the average heart rate
-    average_heart_rate = sum(heart_rates) / len(heart_rates)
+
+    # Safely calculate the average heart rate
+    try:
+        average_heart_rate = sum(heart_rates) / len(heart_rates)
+    except ZeroDivisionError:
+        print("Error: Division by zero when calculating average heart rate.")
+        return None
+    
     # Create a string from the heart_rates list in the desired format
     heart_rates_str = '{' + ','.join(['{:.2f}'.format(rate) for rate in heart_rates]) + '}'
     # Print the heart rates in the desired format
@@ -106,14 +120,15 @@ def find_heart_rate(values):
 
 
 def new_spo2(red_values, ir_values):
-    R1 = (max(red_values) - min(red_values)) * (min(ir_values))
-    R2 = (max(ir_values) - min(ir_values)) * (min(red_values))
-     # Handle division by zero
-    if R2 == 0:
+    try:
+        R1 = (max(red_values) - min(red_values)) * (min(ir_values))
+        R2 = (max(ir_values) - min(ir_values)) * (min(red_values))
+         # Handle division by zero
+        R = R1 / R2
+    except ZeroDivisionError:
         print("Error: Division by zero encountered. Cannot calculate SpO2.")
         return None
 
-    R = R1 / R2
     sqR = R**2
     cubeR = R**3
     spo2 = (10*cubeR)-(53*sqR)+(43*R)+98
@@ -128,7 +143,7 @@ while True:
     print("Estimated Heart Rate: {:.2f} BPM".format(bpm))
     print("Estimated SpO2 Level: {:.2f}% ".format(spo2))
     #find_spo2(red _values, red_peaks, ir_values, ir_peaks)
-   # Display the heart rate on the OLED
+    # Display the heart rate on the OLED
     #oled.fill(0)  # Clear the display
     #oled.text("{:.2f} %spo2".format(spo2), 0, 0)  # Top left
     #oled.text("{:.2f} BPM".format(bpm), 0, 30)  # Middle left
