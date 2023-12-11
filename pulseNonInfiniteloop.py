@@ -56,56 +56,63 @@ def LED_switch(Window_Size):
 
 def custom_min(values):
     try:
+        # Check if the list is empty; if so, raise a ValueError
         if not values:
             raise ValueError("Empty list provided for min calculation.")
-        min_value = values[0]
-        for value in values:
-            if value < min_value:
-                min_value = value
-        return min_value
+        min_value = values[0]  # Initialize min_value with the first element of the list
+        for value in values:   # Iterate through each element in the list
+            if value < min_value:  # If the current element is smaller than min_value
+                min_value = value  # Update min_value to the current element
+        return min_value  # Return the minimum value found
     except TypeError:
+        # Handle the TypeError if elements in the list are not comparable
         print("TypeError encountered in custom_min: Non-comparable elements.")
         return None
     except ValueError as e:
+        # Handle the ValueError if an empty list is passed
         print(f"ValueError in custom_min: {e}")
         return None
-    
+
 def custom_max(values):
     try:
+        # Check if the list is empty; if so, raise a ValueError
         if not values:
             raise ValueError("Empty list provided for max calculation.")
-        max_value = values[0]
-        for value in values:
-            if value > max_value:
-                max_value = value
-        return max_value
+        max_value = values[0]  # Initialize max_value with the first element of the list
+        for value in values:   # Iterate through each element in the list
+            if value > max_value:  # If the current element is greater than max_value
+                max_value = value  # Update max_value to the current element
+        return max_value  # Return the maximum value found
     except TypeError:
+        # Handle the TypeError if elements in the list are not comparable
         print("TypeError encountered in custom_max: Non-comparable elements.")
         return None
     except ValueError as e:
+        # Handle the ValueError if an empty list is passed
         print(f"ValueError in custom_max: {e}")
         return None
 
 def custom_sum(numbers):
     try:
-        total = 0
-        for number in numbers:
-            total += number
-        return total
+        total = 0  # Initialize total to 0
+        for number in numbers:  # Iterate through each number in the list
+            total += number  # Add each number to the total
+        return total  # Return the sum of the numbers
     except TypeError:
+        # Handle TypeError if a non-numeric value is encountered
         print("TypeError: Non-numeric value encountered in custom_sum.")
         return None
 
 def custom_len(items):
     try:
-        count = 0
-        for _ in items:
-            count += 1
-        return count
+        count = 0  # Initialize count to 0
+        for _ in items:  # Iterate through each item in the iterable
+            count += 1  # Increment count for each item
+        return count  # Return the total number of items
     except TypeError:
+        # Handle TypeError if the provided argument is not iterable
         print("TypeError: Provided argument is not iterable in custom_len.")
         return None
-
 
 # Let's redefine the peak detection with the new threshold and minimum distance parameters
 def find_peaks(values, threshold, min_distance):
@@ -135,7 +142,7 @@ def find_peaks(values, threshold, min_distance):
 def find_heart_rate(values):
     # Redefine the threshold and minimum distance
     threshold = 45000#according to matlab, threshold can change anytime
-    min_distance = 60  # This corresponds to 0.6 seconds given a sampling rate of 100Hz
+    min_distance = 40  # This corresponds to 0.6 seconds given a sampling rate of 100Hz
 
     # Find the peaks using the custom function with the new parameters
     peaks = find_peaks(values, threshold, min_distance)
@@ -184,7 +191,7 @@ def new_spo2(red_values, ir_values):
 
         R1 = (max_red - min_red) * min_ir
         R2 = (max_ir - min_ir) * min_red
-        R = R1 / R2
+        R = R1 / R2 #find the ratio
     except ZeroDivisionError:
         print("Error: Division by zero encountered. Cannot calculate SpO2.")
         return None
