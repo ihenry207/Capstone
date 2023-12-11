@@ -153,6 +153,7 @@ def find_heart_rate(values):
             print("Warning: Division by zero encountered in heart rate calculation.")
             continue #continue. this is a more forgiving approach
         
+    print("\n")
     # Safely calculate the average heart rate
     try:
         # Filter out heart rates below 50
@@ -197,33 +198,10 @@ def new_spo2(red_values, ir_values):
     spo2 = (10*cubeR)-(53*sqR)+(43*R)+98
     return spo2
 
-def calculate_spo2(red_values, infrared_values):
-    # Calculate the AC and DC components of the signals
-    AC_red = max(red_values) - min(red_values)
-    DC_red = sum(red_values) / len(red_values)
-    
-    AC_infrared = max(infrared_values) - min(infrared_values)
-    DC_infrared = sum(infrared_values) / len(infrared_values)
-
-    # Calculate the ratio
-    R = (AC_red / DC_red) / (AC_infrared / DC_infrared)
-
-    # Polynomial coefficients (hypothetical, should be determined empirically)
-    # For example: SpO2 = a * R^2 + b * R + c
-    # Adjusted polynomial coefficients
-    a = -15  # Adjusted coefficient for cubic term
-    b = 30   # Adjusted coefficient for quadratic term
-    c = -20  # Adjusted coefficient for linear term
-    d = 98   # Adjusted base value for SpO2
-    # Calculate SpO2 with increased sensitivity
-    spo2 = a * R**3 + b * R**2 + c * R + d
-
-    return spo2
-
 while True:
     red_values, ir_values = LED_switch(WINDOW_SIZE)
     
-    spo2 = calculate_spo2(red_values, ir_values)
+    spo2 = new_spo2(red_values, ir_values)
     #spo2 = find_spo2(red_values, ir_values)
     bpm = find_heart_rate(red_values)
     

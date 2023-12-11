@@ -128,15 +128,15 @@ def find_peaks(values, threshold, min_distance):
     # Check if the last peak is a valid peak and hasn't been added yet
     if peak and custom_len(values) - peak[0] >= min_distance:
         peaks.append(peak)
-    print("the length of peaks is: ", len(peaks))
+    #print("the length of peaks is: ", len(peaks))
 
     return peaks
 
 def find_heart_rate(values):
     # Redefine the threshold and minimum distance
-    threshold = 45000#according to matlab, threshold can change anytime
+    threshold = int(custom_max(values) // 1.25)#according to matlab, threshold can change anytime
     min_distance = 60  # This corresponds to 0.6 seconds given a sampling rate of 100Hz
-
+    #print("here is threshold: ", threshold)
     # Find the peaks using the custom function with the new parameters
     peaks = find_peaks(values, threshold, min_distance)
     # Calculate the heart rates from the peaks
@@ -197,33 +197,10 @@ def new_spo2(red_values, ir_values):
     spo2 = (10*cubeR)-(53*sqR)+(43*R)+98
     return spo2
 
-def calculate_spo2(red_values, infrared_values):
-    # Calculate the AC and DC components of the signals
-    AC_red = max(red_values) - min(red_values)
-    DC_red = sum(red_values) / len(red_values)
-    
-    AC_infrared = max(infrared_values) - min(infrared_values)
-    DC_infrared = sum(infrared_values) / len(infrared_values)
-
-    # Calculate the ratio
-    R = (AC_red / DC_red) / (AC_infrared / DC_infrared)
-
-    # Polynomial coefficients (hypothetical, should be determined empirically)
-    # For example: SpO2 = a * R^2 + b * R + c
-    # Adjusted polynomial coefficients
-    a = -15  # Adjusted coefficient for cubic term
-    b = 30   # Adjusted coefficient for quadratic term
-    c = -20  # Adjusted coefficient for linear term
-    d = 98   # Adjusted base value for SpO2
-    # Calculate SpO2 with increased sensitivity
-    spo2 = a * R**3 + b * R**2 + c * R + d
-
-    return spo2
-
 while True:
     red_values, ir_values = LED_switch(WINDOW_SIZE)
     
-    spo2 = calculate_spo2(red_values, ir_values)
+    spo2 = new_spo2(red_values, ir_values)
     #spo2 = find_spo2(red_values, ir_values)
     bpm = find_heart_rate(red_values)
     
@@ -259,5 +236,6 @@ while True:
     #oled.show()  # Show the display
     gc.collect()
     break 
+
 
 

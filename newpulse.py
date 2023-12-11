@@ -12,8 +12,8 @@ import gc
 adc = ADC(Pin(26))
 WIDTH = 128
 HEIGHT = 64
-#i2c = I2C(0, scl = Pin(17), sda = Pin(16), freq = 200000)
-#oled = SSD1306_I2C(WIDTH, HEIGHT, i2c)
+i2c = I2C(0, scl = Pin(17), sda = Pin(16), freq = 200000)
+oled = SSD1306_I2C(WIDTH, HEIGHT, i2c)
 # Define pins
 pin1 = Pin(14, Pin.OUT)
 pin2 = Pin(15, Pin.OUT)
@@ -129,10 +129,10 @@ while True:
     print("Estimated SpO2 Level: {:.2f}% ".format(spo2))
     #find_spo2(red _values, red_peaks, ir_values, ir_peaks)
    # Display the heart rate on the OLED
-    #oled.fill(0)  # Clear the display
-    #oled.text("{:.2f} %spo2".format(spo2), 0, 0)  # Top left
-    #oled.text("{:.2f} BPM".format(bpm), 0, 30)  # Middle left
-    #oled.show()  # Show the display
+    oled.fill(0)  # Clear the display
+    oled.text("{:.2f} %spo2".format(spo2), 0, 0)  # Top left
+    oled.text("{:.2f} BPM".format(bpm), 0, 30)  # Middle left
+    oled.show()  # Show the display
     gc.collect()
     break 
 
